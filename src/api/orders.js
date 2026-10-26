@@ -45,7 +45,7 @@ export async function payOrder(orderId) {
   return response.data
 }
 
-export async function cancelOrder(orderId, reason) {
-  const response = await http.post(`/api/orders/${orderId}/cancel`, { reason })
+export async function cancelOrder(orderId) {
+  const response = await http.post(`/api/orders/${orderId}/cancel`, {})
   return response.data
 }
