@@ -17,7 +17,7 @@ import OrderProgressPage from '../components/user/OrderProgressPage.vue'
 import PaymentPage from '../components/user/PaymentPage.vue'
 import ProfilePage from '../components/user/ProfilePage.vue'
 import RecommendedGoodsPage from '../components/user/RecommendedGoodsPage.vue'
-import { hasAuthSession } from '../stores/authStore'
+import { hasAuthSession, useAuthStore } from '../stores/authStore'
 
 const router = createRouter({
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,7 +35,9 @@ const router = createRouter({
 			path: '/admin',
 			component: AdminLayout,
 			redirect: '/admin/dashboard',
+			meta: { requiresAdmin: true },
 			children: [
+				{ path: 'profile', component: ProfilePage },
 				{ path: 'dashboard', component: AdminHomePage },
 				{ path: 'goods', component: AdminGoodsEditingPage },
 				{ path: 'goods/:id/edit', component: AdminGoodsEditInsidePage, props: true },
@@ -62,6 +64,13 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+	if (to.matched.some((record) => record.meta.requiresAdmin)) {
+		const auth = useAuthStore()
+		const user = await auth.refreshSession()
+		if (!user) return { name: 'auth-login', query: { redirect: to.fullPath } }
+		if (!auth.isAdmin) return '/user/goods/recommended'
+		return
+	}
 	if (to.matched.some((record) => record.meta.requiresAuth) && !(await hasAuthSession())) {
 		return { name: 'auth-login', query: { redirect: to.fullPath } }
 	}
