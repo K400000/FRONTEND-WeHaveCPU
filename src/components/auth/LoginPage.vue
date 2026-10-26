@@ -17,10 +17,10 @@ async function submitLogin() {
 	errorMessage.value = ''
 
 	try {
-		await auth.login({ email: email.value.trim(), password: password.value })
+		const user = await auth.login({ email: email.value.trim(), password: password.value })
 		const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/') && !route.query.redirect.startsWith('//')
 			? route.query.redirect
-			: '/user/profile'
+			: user?.role === 'admin' ? '/admin/dashboard' : '/user/profile'
 		await router.replace(redirect)
 	} catch (error) {
 		errorMessage.value = error.response?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน'

@@ -139,9 +139,9 @@ onBeforeUnmount(() => {
 <template>
 	<main class="container py-4">
 		<nav class="d-flex align-items-center gap-2 small text-secondary mb-3" aria-label="เส้นทางนำทาง">
-			<RouterLink class="link-secondary text-decoration-none" to="/user/goods/recommended">หน้าหลัก</RouterLink>
+			<RouterLink class="link-secondary text-decoration-none" :to="auth.isAdmin ? '/admin/dashboard' : '/user/goods/recommended'">{{ auth.isAdmin ? 'แดชบอร์ด' : 'หน้าหลัก' }}</RouterLink>
 			<span aria-hidden="true">›</span>
-			<RouterLink class="link-secondary text-decoration-none" to="/user/profile">บัญชีของฉัน</RouterLink>
+			<RouterLink class="link-secondary text-decoration-none" :to="auth.isAdmin ? '/admin/profile' : '/user/profile'">บัญชีของฉัน</RouterLink>
 			<span aria-hidden="true">›</span>
 			<span aria-current="page">ข้อมูลโปรไฟล์</span>
 		</nav>
@@ -155,7 +155,7 @@ onBeforeUnmount(() => {
 					</div>
 					<div class="fw-semibold">{{ [profile.firstName, profile.lastName].filter(Boolean).join(' ') || 'สมาชิก' }}</div>
 					<div class="small text-secondary text-truncate">{{ profile.email }}</div>
-					  <span v-if="profile.role" class="badge text-bg-light border mt-2">{{ profile.role === 'admin' ? 'Admin' : 'Member' }}</span>
+					  <span v-if="profile.role" class="badge mt-2" :class="profile.role === 'admin' ? 'text-bg-danger' : 'text-bg-light border'">{{ profile.role === 'admin' ? 'Admin (ผู้ดูแลระบบ)' : 'Member' }}</span>
 				</section>
 
 				<nav class="list-group mb-3" aria-label="การตั้งค่าบัญชี">
