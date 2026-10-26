@@ -360,12 +360,6 @@ onMounted(() => {
                   <label class="form-label small fw-semibold" for="new-desc">รายละเอียดสินค้า</label>
                   <textarea id="new-desc" v-model="newProduct.description" class="form-control" rows="3"></textarea>
                 </div>
-                <div class="col-12">
-                  <div class="form-check form-switch">
-                    <input id="new-active" v-model="newProduct.isActive" class="form-check-input" type="checkbox" role="switch" />
-                    <label class="form-check-label small" for="new-active">เปิดขายหน้าร้านทันที</label>
-                  </div>
-                </div>
               </div>
             </div>
             <div class="modal-footer">
