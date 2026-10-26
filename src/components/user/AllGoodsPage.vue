@@ -120,12 +120,6 @@ onMounted(() => {
 
 				<div :class="filtersOpen ? 'd-block' : 'd-none d-lg-block'">
 					<div v-if="filterError" class="alert alert-warning py-2 small">{{ filterError }}</div>
-					<section class="border-bottom pb-3 mb-3">
-						<label class="form-check">
-							<input v-model="inStockOnly" class="form-check-input" type="checkbox" @change="loadProducts(1)" />
-							<span class="form-check-label">แสดงสินค้าพร้อมขายเท่านั้น</span>
-						</label>
-					</section>
 
 					<section class="border-bottom pb-3 mb-3">
                         <h2 class="h6 fw-semibold mb-2">หมวดหมู่สินค้า</h2>
