@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import http from '../api/http'
 
 async function requestCurrentUser() {
@@ -20,6 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
 	const user = ref(null)
 	const isAuthenticated = ref(false)
 	const isInitialized = ref(false)
+	const isAdmin = computed(() => user.value?.role === 'admin')
 
 	async function refreshSession() {
 		try {
@@ -61,5 +62,5 @@ export const useAuthStore = defineStore('auth', () => {
 		}
 	}
 
-	return { user, isAuthenticated, isInitialized, refreshSession, login, register, logout }
+	return { user, isAuthenticated, isInitialized, isAdmin, refreshSession, login, register, logout }
 })
