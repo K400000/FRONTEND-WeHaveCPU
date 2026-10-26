@@ -54,7 +54,7 @@ const router = createRouter({
 				{ path: 'goods/:id', component: GoodsDescriptionPage, props: true },
 				{ path: 'orders', component: OrderLog, meta: { requiresAuth: true } },
 				{ path: 'orders/:id/progress', component: OrderProgressPage, props: true, meta: { requiresAuth: true } },
-				{ path: 'payment', component: PaymentPage },
+				{ path: 'payment', component: PaymentPage, meta: { requiresAuth: true } },
 				{ path: 'profile', component: ProfilePage, meta: { requiresAuth: true } },
 			],
 		},
