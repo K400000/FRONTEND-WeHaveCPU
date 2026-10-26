@@ -40,22 +40,14 @@ async function logout() {
 <template>
   <header class="bg-white border-bottom">
     <div class="container">
-      <div class="row align-items-center gy-2 py-3">
-        <div class="col-7 col-md-auto order-1">
+      <div class="row align-items-center justify-content-between gy-2 py-3">
+        <div class="col-auto">
           <RouterLink class="d-inline-flex align-items-center gap-2 text-dark fw-bold text-decoration-none" to="/user/goods/recommended" aria-label="We Have CPU หน้าหลัก">
-          <img :src="logo" alt="" width="150" height="50" class="object-fit-contain" />
+            <img :src="logo" alt="" width="150" height="50" class="object-fit-contain" />
           </RouterLink>
         </div>
 
-        <form class="col-12 col-md order-3 order-md-2" role="search" @submit.prevent>
-          <label class="visually-hidden" for="store-search">ค้นหาสินค้า</label>
-          <div class="input-group">
-            <input id="store-search" class="form-control" type="search" placeholder="ค้นหาสินค้า รุ่น หรือ SKU" />
-            <button class="btn btn-danger" type="submit">ค้นหา</button>
-          </div>
-        </form>
-
-        <div class="col-5 col-md-auto order-2 order-md-3 text-end">
+        <div class="col-auto ms-auto text-end">
           <div class="d-flex align-items-center justify-content-end gap-2">
             <RouterLink class="btn btn-outline-secondary position-relative" to="/user/cart" :aria-label="`ตะกร้าสินค้า ${cart.itemCount} ชิ้น`">
               <i class="bi bi-cart3" aria-hidden="true"></i>
@@ -71,12 +63,12 @@ async function logout() {
               </button>
               <ul v-if="profileMenuOpen" id="profile-menu" class="dropdown-menu dropdown-menu-end show" @click="profileMenuOpen = false">
                 <template v-if="auth.isAuthenticated">
-                <li><h6 class="dropdown-header">{{ [auth.user?.firstName, auth.user?.lastName].filter(Boolean).join(' ') || 'บัญชีของฉัน' }}</h6></li>
-                <li><RouterLink class="dropdown-item" to="/user/orders">Order ของฉัน</RouterLink></li>
-                <li><RouterLink class="dropdown-item" to="/user/profile">โปรไฟล์ของฉัน</RouterLink></li>
-                <li><RouterLink class="dropdown-item" to="/user/payment">ชำระเงิน</RouterLink></li>
-                <li><hr class="dropdown-divider" /></li>
-                <li><button class="dropdown-item text-danger" type="button" @click="logout">ออกจากระบบ</button></li>
+                  <li><h6 class="dropdown-header">{{ [auth.user?.firstName, auth.user?.lastName].filter(Boolean).join(' ') || 'บัญชีของฉัน' }}</h6></li>
+                  <li><RouterLink class="dropdown-item" to="/user/orders">Order ของฉัน</RouterLink></li>
+                  <li><RouterLink class="dropdown-item" to="/user/profile">โปรไฟล์ของฉัน</RouterLink></li>
+                  <li><RouterLink class="dropdown-item" to="/user/payment">ชำระเงิน</RouterLink></li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li><button class="dropdown-item text-danger" type="button" @click="logout">ออกจากระบบ</button></li>
                 </template>
                 <template v-else>
                   <li><h6 class="dropdown-header">บัญชีของฉัน</h6></li>
