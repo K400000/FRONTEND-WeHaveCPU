@@ -61,9 +61,7 @@ async function logout() {
         </nav>
 
         <div class="col col-lg-auto order-2 order-lg-3 d-flex align-items-center justify-content-end gap-2">
-          <RouterLink class="btn btn-outline-secondary btn-sm d-none d-md-inline-flex align-items-center gap-1" to="/user/goods/recommended">
-            <i class="bi bi-shop" aria-hidden="true"></i>ดูหน้าร้านจริง
-          </RouterLink>
+          
 
           <div ref="profileMenuRoot" class="dropdown" @keydown.esc="profileMenuOpen = false">
             <button class="btn d-flex align-items-center gap-2 p-1 border-0" type="button" aria-controls="admin-profile-menu" :aria-expanded="profileMenuOpen" aria-label="เมนูโปรไฟล์ผู้ดูแลระบบ" @click.stop="profileMenuOpen = !profileMenuOpen">

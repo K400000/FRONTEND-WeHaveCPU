@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { deleteProduct, getAdminProduct, setPrimaryProductImage, updateProduct, uploadProductImages } from '../../api/adminProducts'
+import { deleteProduct, getAdminProduct, setPrimaryProductImage, updateProduct, uploadProductImages, deleteProductImage } from '../../api/adminProducts'
 import { getBrands, getCategories, resolveApiAsset } from '../../api/catalog'
 import { formatPrice } from '../../utils/formatters'
 
@@ -247,6 +247,29 @@ async function confirmDelete() {
   }
 }
 
+async function removeImage(imageId) {
+  if (!confirm('ต้องการลบรูปภาพนี้ใช่หรือไม่?')) return
+  
+  imageBusy.value = true
+  imageError.value = ''
+  imageMessage.value = ''
+  
+  try {
+    await deleteProductImage(props.id, imageId) 
+    await loadProduct() 
+    
+    if (selectedImageId.value === imageId) {
+      selectedImageId.value = null
+    }
+    
+    imageMessage.value = 'ลบรูปภาพเรียบร้อยแล้ว'
+  } catch (error) {
+    imageError.value = error.response?.data?.message || 'ลบรูปภาพไม่สำเร็จ'
+  } finally {
+    imageBusy.value = false
+  }
+}
+
 onMounted(() => {
   loadOptions()
   loadProduct()
@@ -286,7 +309,6 @@ onBeforeUnmount(clearPending)
         </div>
         <div class="d-flex gap-2">
           <RouterLink class="btn btn-outline-secondary" to="/admin/goods"><i class="bi bi-arrow-left me-1" aria-hidden="true"></i>กลับหน้าจัดการสินค้า</RouterLink>
-          <RouterLink class="btn btn-outline-secondary" :to="`/user/goods/${product.productId}`"><i class="bi bi-eye me-1" aria-hidden="true"></i>ดูหน้าร้านจริง</RouterLink>
         </div>
       </div>
 
@@ -306,12 +328,16 @@ onBeforeUnmount(clearPending)
             <span v-else-if="activeImage" class="badge text-bg-danger mb-2">รูปหลัก</span>
 
             <div v-if="images.length" class="d-flex flex-wrap gap-2 mb-3">
-              <button v-for="image in images" :key="image.imageId" type="button" class="thumb btn p-0 border rounded overflow-hidden position-relative" :class="{ 'border-danger border-2': image.imageId === activeImage?.imageId }" :aria-label="`เลือกรูปที่ ${image.imageId}`" @click="selectedImageId = image.imageId">
-                <img :src="image.url" alt="" class="w-100 h-100 object-fit-cover" />
-                <i v-if="image.isPrimary" class="bi bi-star-fill text-danger position-absolute top-0 start-0 m-1 small" aria-hidden="true"></i>
-              </button>
+              <div v-for="image in images" :key="image.imageId" class="thumb position-relative border rounded overflow-hidden" :class="{ 'border-danger border-2': image.imageId === activeImage?.imageId }">
+                <button type="button" class="btn p-0 w-100 h-100" :aria-label="`เลือกรูปที่ ${image.imageId}`" @click="selectedImageId = image.imageId">
+                  <img :src="image.url" alt="" class="w-100 h-100 object-fit-cover" />
+                </button>
+                <i v-if="image.isPrimary" class="bi bi-star-fill text-danger position-absolute top-0 start-0 m-1 small" aria-hidden="true" style="pointer-events: none;"></i>
+                <button v-if="!image.isPrimary" type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 p-0 d-flex align-items-center justify-content-center m-1 shadow-sm" style="width: 20px; height: 20px; z-index: 10;" :disabled="imageBusy" @click.stop="removeImage(image.imageId)" aria-label="ลบรูปภาพ">
+                  <i class="bi bi-x" aria-hidden="true"></i>
+                </button>
+              </div>
             </div>
-
             <div class="border-top pt-3">
               <input ref="imageInput" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp" multiple @change="chooseImages" />
               <button class="btn btn-outline-secondary btn-sm" type="button" :disabled="imageBusy || !remainingSlots" @click="imageInput?.click()">
