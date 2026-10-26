@@ -56,7 +56,6 @@ async function submitLogin() {
 				<div>
 					<div class="d-flex justify-content-between align-items-center mb-1">
 						<label class="form-label small fw-semibold mb-0" for="login-password">รหัสผ่าน</label>
-						<button class="btn btn-link p-0 small text-danger text-decoration-none" type="button">ลืมรหัสผ่าน?</button>
 					</div>
 					<div class="input-group">
 	    <input id="login-password"
