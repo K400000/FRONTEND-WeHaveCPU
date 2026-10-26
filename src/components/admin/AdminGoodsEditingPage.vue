@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { getBrands, getCategories, getPublicProducts, mapCatalogProduct } from '../../api/catalog'
 import { createProduct } from '../../api/adminProducts'
+import CatalogManageModal from './CatalogManageModal.vue'
 import { formatPrice } from '../../utils/formatters'
 
 const sortOptions = [
@@ -91,6 +92,17 @@ function stockBadge(product) {
   if (product.stockCount <= 0) return { text: 'สินค้าหมด', cls: 'text-bg-danger' }
   if (product.stockCount <= lowStockLimit) return { text: `เหลือน้อย ${product.stockCount} ชิ้น`, cls: 'text-bg-warning' }
   return { text: `คงเหลือ ${product.stockCount} ชิ้น`, cls: 'text-bg-success' }
+}
+
+// ---- จัดการหมวดหมู่ / แบรนด์ ----
+const manageKind = ref(null)
+
+async function onCatalogChanged() {
+  if (categoryId.value && !categories.value.some((item) => item.categoryId === categoryId.value)) categoryId.value = ''
+  await loadFilters()
+  if (categoryId.value && !categories.value.some((item) => item.categoryId === categoryId.value)) categoryId.value = ''
+  if (brandId.value && !brands.value.some((item) => item.brandId === brandId.value)) brandId.value = ''
+  await loadProducts(pagination.value.currentPage)
 }
 
 // ---- เพิ่มสินค้าใหม่ ----
@@ -184,7 +196,9 @@ onMounted(() => {
       <p class="small text-secondary mb-0">เลือกสินค้าที่ต้องการเพื่อเข้าไปแก้ไขรายละเอียด ราคา และสต็อก</p>
     </header>
 
-    <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex flex-wrap justify-content-end gap-2 mb-3">
+      <button class="btn btn-outline-secondary" type="button" @click="manageKind = 'category'"><i class="bi bi-tags me-1" aria-hidden="true"></i>จัดการหมวดหมู่</button>
+      <button class="btn btn-outline-secondary" type="button" @click="manageKind = 'brand'"><i class="bi bi-award me-1" aria-hidden="true"></i>จัดการแบรนด์</button>
       <button class="btn btn-success" type="button" @click="openAdd"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>เพิ่มสินค้า</button>
     </div>
 
@@ -293,6 +307,8 @@ onMounted(() => {
         <button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage >= pagination.totalPages" @click="loadProducts(pagination.currentPage + 1)">ถัดไป</button>
       </div>
     </nav>
+    <CatalogManageModal v-if="manageKind" :kind="manageKind" @close="manageKind = null" @changed="onCatalogChanged" />
+
     <template v-if="showAdd">
       <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="add-product-title" @keydown.esc="closeAdd">
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
