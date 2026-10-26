@@ -4,6 +4,7 @@ import AdminGoodsEditingPage from '../components/admin/AdminGoodsEditingPage.vue
 import AdminHomePage from '../components/admin/AdminHomePage.vue'
 import AdminOrderManagePage from '../components/admin/AdminOrderManagePage.vue'
 import AdminRoleManagePage from '../components/admin/AdminRoleManagePage.vue'
+import CartPage from '../components/user/CartPage.vue'
 import LoginPage from '../components/auth/LoginPage.vue'
 import RegisterPage from '../components/auth/RegisterPage.vue'
 import AdminLayout from '../components/layout/AdminLayout.vue'
@@ -48,6 +49,7 @@ const router = createRouter({
 			children: [
 				{ path: 'goods', component: AllGoodsPage },
 				{ path: 'goods/recommended', component: RecommendedGoodsPage },
+				{ path: 'cart', component: CartPage, meta: { requiresAuth: true } },
 				{ path: 'goods/:id', component: GoodsDescriptionPage, props: true },
 				{ path: 'orders', redirect: '/user/orders/demo/progress', meta: { requiresAuth: true } },
 				{ path: 'orders/:id/progress', component: OrderProgressPage, props: true, meta: { requiresAuth: true } },
@@ -58,8 +60,8 @@ const router = createRouter({
 	],
 })
 
-router.beforeEach((to) => {
-	if (to.matched.some((record) => record.meta.requiresAuth) && !hasAuthSession()) {
+router.beforeEach(async (to) => {
+	if (to.matched.some((record) => record.meta.requiresAuth) && !(await hasAuthSession())) {
 		return { name: 'auth-login', query: { redirect: to.fullPath } }
 	}
 })

@@ -1,8 +1,33 @@
 <script setup>
 import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/authStore'
 
-const loginMode = ref('password')
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+const email = ref('')
+const password = ref('')
 const passwordVisible = ref(false)
+const submitting = ref(false)
+const errorMessage = ref('')
+
+async function submitLogin() {
+	submitting.value = true
+	errorMessage.value = ''
+
+	try {
+		await auth.login({ email: email.value.trim(), password: password.value })
+		const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/') && !route.query.redirect.startsWith('//')
+			? route.query.redirect
+			: '/user/profile'
+		await router.replace(redirect)
+	} catch (error) {
+		errorMessage.value = error.response?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน'
+	} finally {
+		submitting.value = false
+	}
+}
 </script>
 
 <template>
@@ -21,23 +46,25 @@ const passwordVisible = ref(false)
                 <p class="small text-secondary mb-0">ยินดีต้อนรับสู่ WEHAVECPU ศูนย์รวมคอมพิวเตอร์และอุปกรณ์ไอทีชั้นนำ</p>
             </header>
 
-			<form class="d-grid gap-3 mt-3" @submit.prevent>
+			<div v-if="errorMessage" class="alert alert-danger py-2 small" role="alert">{{ errorMessage }}</div>
+			<form class="d-grid gap-3 mt-3" @submit.prevent="submitLogin">
 				<div>
 					<label class="form-label small fw-semibold mb-1" for="login-identity">อีเมล</label>
-					<input id="login-identity" class="form-control" type="email" autocomplete="username" placeholder="yourname@email.com" />
+					<input id="login-identity" v-model="email" class="form-control" type="email" autocomplete="username" placeholder="yourname@email.com" required />
 				</div>
 
-				<div v-if="loginMode === 'password'">
+				<div>
 					<div class="d-flex justify-content-between align-items-center mb-1">
 						<label class="form-label small fw-semibold mb-0" for="login-password">รหัสผ่าน</label>
 						<button class="btn btn-link p-0 small text-danger text-decoration-none" type="button">ลืมรหัสผ่าน?</button>
 					</div>
 					<div class="input-group">
-    <input id="login-password" 
+	    <input id="login-password"
            class="form-control" 
            :type="passwordVisible ? 'text' : 'password'" 
+		    v-model="password"
            autocomplete="current-password" 
-           placeholder="กรอกรหัสผ่านของคุณ" />
+		    placeholder="กรอกรหัสผ่านของคุณ" required />
     
     <button class="btn btn-outline-secondary" 
             type="button" 
@@ -48,19 +75,14 @@ const passwordVisible = ref(false)
 </div>
 				</div>
 
-				<div v-else>
-					<div class="d-flex justify-content-between align-items-center mb-1">
-						<label class="form-label small fw-semibold mb-0" for="login-otp">รหัส OTP</label>
-						<button class="btn btn-link p-0 small text-danger text-decoration-none" type="button">ส่ง OTP</button>
-					</div>
-					<input id="login-otp" class="form-control" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="กรอกรหัส OTP" />
-				</div>
-
-				<div v-if="loginMode === 'password'" class="d-flex justify-content-between align-items-center small">
+				<div class="d-flex justify-content-between align-items-center small">
 					<label class="form-check-label"><input class="form-check-input me-1" type="checkbox" />จำฉันไว้ในระบบ</label>
 				</div>
 
-				<button class="btn btn-danger w-100 fw-semibold" type="submit">เข้าสู่ระบบ <span aria-hidden="true">→</span></button>
+				<button class="btn btn-danger w-100 fw-semibold" type="submit" :disabled="submitting">
+					<span v-if="submitting" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+					{{ submitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ' }} <span v-if="!submitting" aria-hidden="true">→</span>
+				</button>
 			</form>
 
 			<div class="mt-4 text-center small">

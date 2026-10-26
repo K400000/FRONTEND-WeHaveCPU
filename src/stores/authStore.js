@@ -1,64 +1,65 @@
-// import { defineStore } from "pinia";
-// import {ref} from "vue"
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import http from '../api/http'
 
-const tokenKeys = ['access_token', 'accessToken', 'auth_token', 'token']
-const sessionKeys = ['auth_session', 'session_id', 'session']
-
-function getStorages() {
-	if (typeof window === 'undefined') return []
-	return [window.localStorage, window.sessionStorage]
+async function requestCurrentUser() {
+	const response = await http.get('/api/auth/me')
+	return response.data
 }
 
-function hasStoredSession() {
-	return getStorages().some((storage) =>
-		[...tokenKeys, ...sessionKeys].some((key) => {
-			const value = storage.getItem(key)?.trim()
-			return value && !['false', 'null', 'undefined'].includes(value)
-		}),
-	)
-}
-
-function clearStoredSession() {
-	for (const storage of getStorages()) {
-		for (const key of [...tokenKeys, ...sessionKeys]) storage.removeItem(key)
+export async function hasAuthSession() {
+	try {
+		await requestCurrentUser()
+		return true
+	} catch {
+		return false
 	}
-}
-
-export function hasAuthSession() {
-	return hasStoredSession()
 }
 
 export const useAuthStore = defineStore('auth', () => {
-	const isAuthenticated = ref(hasStoredSession())
+	const user = ref(null)
+	const isAuthenticated = ref(false)
+	const isInitialized = ref(false)
 
-	function refreshSession() {
-		isAuthenticated.value = hasStoredSession()
+	async function refreshSession() {
+		try {
+			user.value = await requestCurrentUser()
+			isAuthenticated.value = true
+			return user.value
+		} catch {
+			user.value = null
+			isAuthenticated.value = false
+			return null
+		} finally {
+			isInitialized.value = true
+		}
 	}
 
-	function logout() {
-		clearStoredSession()
-		isAuthenticated.value = false
+	async function login(credentials) {
+		const response = await http.post('/api/auth/login', credentials)
+		user.value = response.data.user
+		isAuthenticated.value = true
+		isInitialized.value = true
+		return user.value
 	}
 
-	return { isAuthenticated, refreshSession, logout }
+	async function register(userDetails) {
+		const response = await http.post('/api/auth/register', userDetails)
+		user.value = response.data.user
+		isAuthenticated.value = true
+		isInitialized.value = true
+		return user.value
+	}
+
+	async function logout() {
+		try {
+			await http.post('/api/auth/logout')
+		} finally {
+			user.value = null
+			isAuthenticated.value = false
+			isInitialized.value = true
+		}
+	}
+
+	return { user, isAuthenticated, isInitialized, refreshSession, login, register, logout }
 })
-// // สร้าง Composition Function เพื่อสร้าง Store เพื่อเก็บ State
-// export const useAuthStore = defineStore( 'auth',()=>{
-//     // สร้างตัวแปรที่ต้องการสื่อสาร
-//     const isLogin =ref(false)
-//     // สร้าง Action เพื่อเปลี่ยนแปลงสถานะของตัวแปรนั้นๆ
-//     const login=()=>{
-//         isLogin.value=true
-//         console.log(isLogin.value)
-//     }
-//     const logout=()=>{
-//         isLogin.value=false
-//         console.log(isLogin.value)
-//     }
-
-
-//     // ส่งออกState และ Action เพื่อให้ Component อื่นใช้งาน
-//     return {isLogin,login,logout }
-// })

@@ -1,8 +1,52 @@
 <script setup>
 import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../../stores/authStore'
 
+const auth = useAuthStore()
+const route = useRoute()
+const router = useRouter()
+const firstName = ref('')
+const lastName = ref('')
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const phone = ref('')
+const address = ref('')
+const acceptTerms = ref(false)
 const passwordVisible = ref(false)
 const confirmationVisible = ref(false)
+const submitting = ref(false)
+const errorMessage = ref('')
+
+async function submitRegistration() {
+	errorMessage.value = ''
+
+	if (password.value !== confirmPassword.value) {
+		errorMessage.value = 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน'
+		return
+	}
+
+	submitting.value = true
+	try {
+		await auth.register({
+			email: email.value.trim(),
+			password: password.value,
+			firstName: firstName.value.trim(),
+			lastName: lastName.value.trim(),
+			phone: phone.value.trim(),
+			address: address.value.trim(),
+		})
+		const redirect = typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/') && !route.query.redirect.startsWith('//')
+			? route.query.redirect
+			: '/user/profile'
+		await router.replace(redirect)
+	} catch (error) {
+		errorMessage.value = error.response?.data?.message || 'สมัครสมาชิกไม่สำเร็จ กรุณาตรวจสอบข้อมูลแล้วลองอีกครั้ง'
+	} finally {
+		submitting.value = false
+	}
+}
 </script>
 
 <template>
@@ -23,10 +67,17 @@ const confirmationVisible = ref(false)
 				<p class="small text-secondary mb-0">สร้างบัญชีเพื่อสะสมแต้ม ติดตามสถานะคำสั่งซื้อ และรับสิทธิพิเศษก่อนใคร</p>
 			</header>
 
-			<form class="d-grid gap-3" @submit.prevent>
-				<div>
-					<label class="form-label small fw-semibold mb-1" for="register-name">ชื่อ - นามสกุล <span class="text-danger">*</span></label>
-					<input id="register-name" class="form-control" type="text" autocomplete="name" placeholder="เช่น สมชาย ใจดี" />
+			<div v-if="errorMessage" class="alert alert-danger py-2 small" role="alert">{{ errorMessage }}</div>
+			<form class="d-grid gap-3" @submit.prevent="submitRegistration">
+				<div class="row g-2">
+					<div class="col-sm-6">
+						<label class="form-label small fw-semibold mb-1" for="register-first-name">ชื่อ <span class="text-danger">*</span></label>
+						<input id="register-first-name" v-model="firstName" class="form-control" type="text" autocomplete="given-name" placeholder="สมชาย" required />
+					</div>
+					<div class="col-sm-6">
+						<label class="form-label small fw-semibold mb-1" for="register-last-name">นามสกุล <span class="text-danger">*</span></label>
+						<input id="register-last-name" v-model="lastName" class="form-control" type="text" autocomplete="family-name" placeholder="ใจดี" required />
+					</div>
 				</div>
 
 				<div>
@@ -34,13 +85,13 @@ const confirmationVisible = ref(false)
 						<label class="form-label small fw-semibold mb-0" for="register-phone">เบอร์โทรศัพท์มือถือ <span class="text-danger">*</span></label>
 					</div>
 					<div class="input-group">
-						<input id="register-phone" class="form-control" type="tel" autocomplete="tel" placeholder="08X-XXX-XXXX" />
+						<input id="register-phone" v-model="phone" class="form-control" type="tel" autocomplete="tel" placeholder="08X-XXX-XXXX" />
 					</div>
 				</div>
 
 				<div>
 					<label class="form-label small fw-semibold mb-1" for="register-email">อีเมล (Email) <span class="text-danger">*</span></label>
-					<input id="register-email" class="form-control" type="email" autocomplete="email" placeholder="example@email.com" />
+					<input id="register-email" v-model="email" class="form-control" type="email" autocomplete="email" placeholder="example@email.com" required />
 				</div>
 
 				<div>
@@ -50,7 +101,7 @@ const confirmationVisible = ref(false)
             <i :class="passwordVisible ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
         </button>
     </div>
-    <input id="register-password" class="form-control" :type="passwordVisible ? 'text' : 'password'" autocomplete="new-password" placeholder="กำหนดรหัสผ่านความปลอดภัยสูง" />
+	<input id="register-password" v-model="password" class="form-control" :type="passwordVisible ? 'text' : 'password'" autocomplete="new-password" minlength="6" placeholder="กำหนดรหัสผ่านความปลอดภัยสูง" required />
     <div class="row row-cols-2 g-1 mt-2 small text-secondary">
         <div class="col d-flex align-items-center gap-2"><span class="password-indicator rounded-circle border"></span>อย่างน้อย 8 ตัวอักษร</div>
         <div class="col d-flex align-items-center gap-2"><span class="password-indicator rounded-circle border"></span>มีตัวพิมพ์ใหญ่ (A-Z)</div>
@@ -66,17 +117,25 @@ const confirmationVisible = ref(false)
             <i :class="confirmationVisible ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
         </button>
     </div>
-    <input id="register-confirm-password" class="form-control" :type="confirmationVisible ? 'text' : 'password'" autocomplete="new-password" placeholder="กรอกรหัสผ่านอีกครั้ง" />
+    <input id="register-confirm-password" v-model="confirmPassword" class="form-control" :type="confirmationVisible ? 'text' : 'password'" autocomplete="new-password" minlength="6" placeholder="กรอกรหัสผ่านอีกครั้ง" required />
+</div>
+
+<div>
+    <label class="form-label small fw-semibold mb-1" for="register-address">ที่อยู่</label>
+    <textarea id="register-address" v-model="address" class="form-control" rows="2" autocomplete="street-address" placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด"></textarea>
 </div>
 
 				<div class="d-grid gap-2 small">
 					<label class="form-check d-flex align-items-start gap-2 mb-0">
-						<input class="form-check-input flex-shrink-0 mt-1" type="checkbox" />
+						<input v-model="acceptTerms" class="form-check-input flex-shrink-0 mt-1" type="checkbox" required />
 						<span>ฉันยอมรับ <a class="link-danger text-decoration-none" href="#terms">ข้อกำหนดการใช้งาน</a> และ <a class="link-danger text-decoration-none" href="#privacy">นโยบายความเป็นส่วนตัว</a> ของ WEHAVECPU</span>
 					</label>
 				</div>
 
-				<button class="btn btn-danger w-100 fw-semibold" type="submit">ยืนยันการสมัครสมาชิก <span aria-hidden="true">→</span></button>
+				<button class="btn btn-danger w-100 fw-semibold" type="submit" :disabled="submitting || !acceptTerms">
+					<span v-if="submitting" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+					{{ submitting ? 'กำลังสมัครสมาชิก...' : 'ยืนยันการสมัครสมาชิก' }} <span v-if="!submitting" aria-hidden="true">→</span>
+				</button>
 			</form>
 
 			<p class="text-center small text-secondary mt-4 mb-0">มีบัญชีผู้ใช้งานอยู่แล้ว? <RouterLink class="link-danger fw-semibold text-decoration-none" to="/auth/login">เข้าสู่ระบบ</RouterLink></p>

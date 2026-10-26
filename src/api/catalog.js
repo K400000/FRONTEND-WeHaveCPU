@@ -7,6 +7,11 @@ export async function getPublicProducts(params = {}) {
   return response.data
 }
 
+export async function getPublicProductById(productId) {
+  const response = await http.get(`/api/products/${productId}`)
+  return response.data
+}
+
 export async function getCategories() {
   const response = await http.get('/api/categories')
   return response.data
@@ -38,7 +43,7 @@ function normalizeSpecs(specs) {
   return []
 }
 
-function resolveProductImage(imageUrl) {
+export function resolveApiAsset(imageUrl) {
   if (!imageUrl) return ''
 
   try {
@@ -58,13 +63,27 @@ export function mapCatalogProduct(product) {
     category: product.categoryName,
     brandId: product.brandId,
     brand: product.brandName || 'ไม่ระบุแบรนด์',
-    brandLogo: resolveProductImage(product.brandLogoUrl),
+    brandLogo: resolveApiAsset(product.brandLogoUrl),
     name: product.name,
     description: product.description || '',
-    image: resolveProductImage(product.primaryImage),
+    image: resolveApiAsset(product.primaryImage),
     price: Number(product.price) || 0,
     stockCount,
     stock: stockCount > 0 ? 'พร้อมจัดส่ง' : 'สินค้าหมด',
     specs: normalizeSpecs(product.specs),
+  }
+}
+
+export function mapCatalogProductDetail(product) {
+  const images = Array.isArray(product.images) ? product.images : []
+  const primaryImage = images.find((image) => image.isPrimary) || images[0]
+
+  return {
+    ...mapCatalogProduct({ ...product, primaryImage: primaryImage?.imageUrl }),
+    categorySlug: product.categorySlug,
+    images: images.map((image) => ({
+      ...image,
+      imageUrl: resolveApiAsset(image.imageUrl),
+    })),
   }
 }
