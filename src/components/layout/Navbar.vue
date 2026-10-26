@@ -33,14 +33,13 @@ function logout() {
   <header class="bg-white border-bottom">
     <div class="container">
       <div class="row align-items-center gy-2 py-3">
-        <div class="col-7 col-md-auto">
+        <div class="col-7 col-md-auto order-1">
           <RouterLink class="d-inline-flex align-items-center gap-2 text-dark fw-bold text-decoration-none" to="/user/goods/recommended" aria-label="We Have CPU หน้าหลัก">
-          <img :src="logo" alt="" width="44" height="44" class="object-fit-contain" />
-          <span>We Have CPU</span>
+          <img :src="logo" alt="" width="150" height="50" class="object-fit-contain" />
           </RouterLink>
         </div>
 
-        <form class="col-12 col-md" role="search" @submit.prevent>
+        <form class="col-12 col-md order-3 order-md-2" role="search" @submit.prevent>
           <label class="visually-hidden" for="store-search">ค้นหาสินค้า</label>
           <div class="input-group">
             <input id="store-search" class="form-control" type="search" placeholder="ค้นหาสินค้า รุ่น หรือ SKU" />
@@ -48,7 +47,7 @@ function logout() {
           </div>
         </form>
 
-        <div class="col-5 col-md-auto text-end">
+        <div class="col-5 col-md-auto order-2 order-md-3 text-end">
           <div v-if="auth.isAuthenticated" ref="profileMenuRoot" class="dropdown" @keydown.esc="profileMenuOpen = false">
             <button class="btn btn-outline-danger dropdown-toggle" type="button" aria-controls="profile-menu" :aria-expanded="profileMenuOpen" @click.stop="profileMenuOpen = !profileMenuOpen">
               โปรไฟล์

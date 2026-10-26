@@ -1,9 +1,13 @@
+<script setup>
+import logo from '../../assets/WHClogo.png'
+</script>
+
 <template>
   <footer class="border-top bg-light">
     <div class="container py-4">
       <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
         <section class="col">
-          <h2 class="h6 fw-bold">We Have CPU</h2>
+          <img :src="logo" alt="" width="150" height="50" class="object-fit-contain" />
           <p class="small text-secondary mb-0">ร้านจำหน่ายอุปกรณ์คอมพิวเตอร์และสินค้าไอที</p>
         </section>
         <section class="col">
