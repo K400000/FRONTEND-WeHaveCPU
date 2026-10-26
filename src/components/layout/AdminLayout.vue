@@ -1,6 +1,5 @@
 <script setup>
 import AdminNavbar from './AdminNavbar.vue'
-import Footer from './Footer.vue'
 </script>
 
 <template>
@@ -9,6 +8,5 @@ import Footer from './Footer.vue'
     <div class="flex-grow-1">
       <RouterView />
     </div>
-    <Footer />
   </div>
 </template>
