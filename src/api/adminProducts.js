@@ -26,3 +26,8 @@ export async function setPrimaryProductImage(productId, imageId) {
   const response = await http.patch(`/api/products/${productId}/images/${imageId}/primary`)
   return response.data
 }
+
+export async function deleteProductImage(productId, imageId) {
+  const response = await http.delete(`/api/products/${productId}/images/${imageId}`)
+  return response.data
+}
