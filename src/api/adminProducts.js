@@ -1,5 +1,10 @@
 import http from './http'
 
+export async function createProduct(payload) {
+  const response = await http.post('/api/products', payload)
+  return response.data
+}
+
 export async function getAdminProduct(productId) {
   const response = await http.get(`/api/products/${productId}`)
   return response.data
