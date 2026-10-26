@@ -5,6 +5,7 @@ import AdminHomePage from '../components/admin/AdminHomePage.vue'
 import AdminOrderManagePage from '../components/admin/AdminOrderManagePage.vue'
 import AdminRoleManagePage from '../components/admin/AdminRoleManagePage.vue'
 import CartPage from '../components/user/CartPage.vue'
+import OrderLog from '../components/user/OrderLog.vue'
 import LoginPage from '../components/auth/LoginPage.vue'
 import RegisterPage from '../components/auth/RegisterPage.vue'
 import AdminLayout from '../components/layout/AdminLayout.vue'
@@ -51,7 +52,7 @@ const router = createRouter({
 				{ path: 'goods/recommended', component: RecommendedGoodsPage },
 				{ path: 'cart', component: CartPage, meta: { requiresAuth: true } },
 				{ path: 'goods/:id', component: GoodsDescriptionPage, props: true },
-				{ path: 'orders', redirect: '/user/orders/demo/progress', meta: { requiresAuth: true } },
+				{ path: 'orders', component: OrderLog, meta: { requiresAuth: true } },
 				{ path: 'orders/:id/progress', component: OrderProgressPage, props: true, meta: { requiresAuth: true } },
 				{ path: 'payment', component: PaymentPage },
 				{ path: 'profile', component: ProfilePage, meta: { requiresAuth: true } },
