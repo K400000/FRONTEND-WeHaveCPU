@@ -1,6 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { getBrands, getCategories, getPublicProducts, mapCatalogProduct } from '../../api/catalog'
+import { createProduct } from '../../api/adminProducts'
 import { formatPrice } from '../../utils/formatters'
 
 const sortOptions = [
@@ -92,6 +93,78 @@ function stockBadge(product) {
   return { text: `คงเหลือ ${product.stockCount} ชิ้น`, cls: 'text-bg-success' }
 }
 
+// ---- เพิ่มสินค้าใหม่ ----
+const showAdd = ref(false)
+const adding = ref(false)
+const addError = ref('')
+const addFieldErrors = ref({})
+const createdMessage = ref('')
+const createdProductId = ref(null)
+const newProduct = ref(emptyProduct())
+
+function emptyProduct() {
+  return { sku: '', name: '', description: '', price: '', stock: '0', categoryId: '', brandId: '', isActive: true }
+}
+
+function openAdd() {
+  newProduct.value = emptyProduct()
+  addFieldErrors.value = {}
+  addError.value = ''
+  showAdd.value = true
+}
+
+function closeAdd() {
+  if (!adding.value) showAdd.value = false
+}
+
+function validateNew() {
+  const errors = {}
+  const sku = String(newProduct.value.sku).trim()
+  const name = String(newProduct.value.name).trim()
+  const price = Number(newProduct.value.price)
+  const stock = Number(newProduct.value.stock)
+
+  if (!sku) errors.sku = 'กรุณากรอก SKU'
+  else if (sku.length > 50) errors.sku = 'SKU ต้องไม่เกิน 50 ตัวอักษร'
+  if (!name) errors.name = 'กรุณากรอกชื่อสินค้า'
+  else if (name.length > 255) errors.name = 'ชื่อสินค้าต้องไม่เกิน 255 ตัวอักษร'
+  if (newProduct.value.price === '' || !Number.isFinite(price) || price < 0) errors.price = 'ราคาต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป'
+  else if (!/^\d+(\.\d{1,2})?$/.test(String(newProduct.value.price))) errors.price = 'ราคาทศนิยมได้ไม่เกิน 2 ตำแหน่ง'
+  if (newProduct.value.stock === '' || !Number.isInteger(stock) || stock < 0) errors.stock = 'สต็อกต้องเป็นจำนวนเต็มตั้งแต่ 0 ขึ้นไป'
+  if (!newProduct.value.categoryId) errors.categoryId = 'กรุณาเลือกหมวดหมู่'
+  return errors
+}
+
+async function submitAdd() {
+  addError.value = ''
+  addFieldErrors.value = validateNew()
+  if (Object.keys(addFieldErrors.value).length) return
+
+  adding.value = true
+  try {
+    const result = await createProduct({
+      sku: String(newProduct.value.sku).trim(),
+      name: String(newProduct.value.name).trim(),
+      description: newProduct.value.description,
+      price: Number(newProduct.value.price),
+      stock: Number(newProduct.value.stock),
+      categoryId: Number(newProduct.value.categoryId),
+      ...(newProduct.value.brandId ? { brandId: Number(newProduct.value.brandId) } : {}),
+      isActive: newProduct.value.isActive,
+    })
+    createdProductId.value = result?.productId ?? result?.product?.productId ?? null
+    createdMessage.value = `เพิ่มสินค้า "${newProduct.value.name.trim()}" เรียบร้อยแล้ว`
+    showAdd.value = false
+    await loadProducts(1)
+  } catch (error) {
+    const message = error.response?.data?.message || 'เพิ่มสินค้าไม่สำเร็จ กรุณาลองอีกครั้ง'
+    if (error.response?.status === 409) addFieldErrors.value = { sku: message }
+    else addError.value = message
+  } finally {
+    adding.value = false
+  }
+}
+
 onMounted(() => {
   loadFilters()
   loadProducts()
@@ -110,6 +183,18 @@ onMounted(() => {
       <h1 class="h3 fw-bold mb-1">จัดการรายการสินค้าและแก้ไขข้อมูลหน้าร้าน</h1>
       <p class="small text-secondary mb-0">เลือกสินค้าที่ต้องการเพื่อเข้าไปแก้ไขรายละเอียด ราคา และสต็อก</p>
     </header>
+
+    <div class="d-flex justify-content-end mb-3">
+      <button class="btn btn-success" type="button" @click="openAdd"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>เพิ่มสินค้า</button>
+    </div>
+
+    <div v-if="createdMessage" class="alert alert-success d-flex flex-wrap justify-content-between align-items-center gap-2" role="status">
+      <span>
+        {{ createdMessage }}
+        <RouterLink v-if="createdProductId" class="alert-link ms-2" :to="`/admin/goods/${createdProductId}/edit`">ไปอัปโหลดรูปและแก้ไขรายละเอียด</RouterLink>
+      </span>
+      <button type="button" class="btn-close" aria-label="ปิด" @click="createdMessage = ''"></button>
+    </div>
 
     <form class="border rounded bg-white p-3 mb-3" role="search" @submit.prevent="loadProducts(1)">
       <div class="row g-2 align-items-center">
@@ -208,6 +293,76 @@ onMounted(() => {
         <button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage >= pagination.totalPages" @click="loadProducts(pagination.currentPage + 1)">ถัดไป</button>
       </div>
     </nav>
+    <template v-if="showAdd">
+      <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="add-product-title" @keydown.esc="closeAdd">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+          <form class="modal-content" novalidate @submit.prevent="submitAdd">
+            <div class="modal-header">
+              <h2 id="add-product-title" class="modal-title h5">เพิ่มสินค้าใหม่</h2>
+              <button type="button" class="btn-close" aria-label="ปิด" :disabled="adding" @click="closeAdd"></button>
+            </div>
+            <div class="modal-body">
+              <p class="small text-secondary">กรอกข้อมูลสินค้า (<span class="text-danger">*</span> จำเป็น) หลังเพิ่มแล้วสามารถอัปโหลดรูปได้ที่หน้าแก้ไขสินค้า</p>
+              <div v-if="addError" class="alert alert-danger py-2 small" role="alert">{{ addError }}</div>
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label small fw-semibold" for="new-name">ชื่อสินค้า <span class="text-danger">*</span></label>
+                  <input id="new-name" v-model="newProduct.name" class="form-control" :class="{ 'is-invalid': addFieldErrors.name }" type="text" maxlength="255" autofocus />
+                  <div class="invalid-feedback">{{ addFieldErrors.name }}</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold" for="new-sku">SKU <span class="text-danger">*</span></label>
+                  <input id="new-sku" v-model="newProduct.sku" class="form-control" :class="{ 'is-invalid': addFieldErrors.sku }" type="text" maxlength="50" />
+                  <div class="invalid-feedback">{{ addFieldErrors.sku }}</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold" for="new-category">หมวดหมู่ <span class="text-danger">*</span></label>
+                  <select id="new-category" v-model="newProduct.categoryId" class="form-select" :class="{ 'is-invalid': addFieldErrors.categoryId }">
+                    <option value="" disabled>เลือกหมวดหมู่</option>
+                    <option v-for="category in categories" :key="category.categoryId" :value="category.categoryId">{{ category.name }}</option>
+                  </select>
+                  <div class="invalid-feedback">{{ addFieldErrors.categoryId }}</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label small fw-semibold" for="new-brand">แบรนด์</label>
+                  <select id="new-brand" v-model="newProduct.brandId" class="form-select">
+                    <option value="">ไม่ระบุแบรนด์</option>
+                    <option v-for="brand in brands" :key="brand.brandId" :value="brand.brandId">{{ brand.name }}</option>
+                  </select>
+                </div>
+                <div class="col-6 col-md-3">
+                  <label class="form-label small fw-semibold" for="new-price">ราคา (บาท) <span class="text-danger">*</span></label>
+                  <input id="new-price" v-model="newProduct.price" class="form-control" :class="{ 'is-invalid': addFieldErrors.price }" type="number" min="0" step="0.01" inputmode="decimal" />
+                  <div class="invalid-feedback">{{ addFieldErrors.price }}</div>
+                </div>
+                <div class="col-6 col-md-3">
+                  <label class="form-label small fw-semibold" for="new-stock">สต็อก (ชิ้น)</label>
+                  <input id="new-stock" v-model="newProduct.stock" class="form-control" :class="{ 'is-invalid': addFieldErrors.stock }" type="number" min="0" step="1" inputmode="numeric" />
+                  <div class="invalid-feedback">{{ addFieldErrors.stock }}</div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label small fw-semibold" for="new-desc">รายละเอียดสินค้า</label>
+                  <textarea id="new-desc" v-model="newProduct.description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-12">
+                  <div class="form-check form-switch">
+                    <input id="new-active" v-model="newProduct.isActive" class="form-check-input" type="checkbox" role="switch" />
+                    <label class="form-check-label small" for="new-active">เปิดขายหน้าร้านทันที</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" :disabled="adding" @click="closeAdd">ยกเลิก</button>
+              <button type="submit" class="btn btn-success" :disabled="adding">
+                <span v-if="adding" class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>{{ adding ? 'กำลังเพิ่ม...' : 'ยืนยันเพิ่มสินค้า' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="modal-backdrop show"></div>
+    </template>
   </main>
 </template>
 
