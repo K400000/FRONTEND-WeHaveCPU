@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getMyOrderById, getMyOrderTracking } from '../../api/orders'
-import { getStatusDisplay } from '../../utils/statusLabels'
+import { cancelReasonLabels, getStatusDisplay } from '../../utils/statusLabels'
 import { formatDate, formatPrice } from '../../utils/formatters'
 
 const route = useRoute()
@@ -30,7 +30,12 @@ const activeStep = computed(() => {
 	return 0
 })
 
+function isStepComplete(index) {
+	return index < activeStep.value || activeStep.value === steps.length - 1
+}
+
 const orderStatus = computed(() => getStatusDisplay(order.value?.status))
+const cancelReasonLabel = computed(() => cancelReasonLabels[order.value?.cancelReason] || order.value?.cancelReason)
 const shipmentStatusValue = computed(() => tracking.value?.shipmentStatus || order.value?.shipment?.status || '')
 const shipmentStatus = computed(() => shipmentStatusValue.value ? getStatusDisplay(shipmentStatusValue.value) : null)
 const courier = computed(() => tracking.value?.courier || order.value?.shipment?.courier)
@@ -96,15 +101,15 @@ onMounted(loadOrder)
 				</div>
 
 				<div v-if="order.status === 'cancelled'" class="alert alert-danger mt-3 mb-0">
-					คำสั่งซื้อนี้ถูกยกเลิก{{ order.cancelReason ? `: ${order.cancelReason}` : '' }}
+					คำสั่งซื้อนี้ถูกยกเลิก{{ cancelReasonLabel ? `: ${cancelReasonLabel}` : '' }}
 				</div>
 
 				<div v-else class="progress-stepper d-flex overflow-auto pt-4 pb-2" aria-label="สถานะการจัดส่ง">
 					<div v-for="(step, index) in steps" :key="step.title" class="progress-step text-center">
 						<div class="d-flex align-items-center mb-2">
 							<span class="progress-step__connector" :class="{ 'invisible': index === 0, 'is-complete': index <= activeStep }"></span>
-							<span class="progress-step__node d-inline-flex align-items-center justify-content-center rounded-circle border flex-shrink-0" :class="index < activeStep ? 'bg-success border-success text-white' : index === activeStep ? 'bg-danger border-danger text-white' : 'bg-light text-secondary'">
-								<i v-if="index < activeStep" class="bi bi-check-lg" aria-hidden="true"></i>
+							<span class="progress-step__node d-inline-flex align-items-center justify-content-center rounded-circle border flex-shrink-0" :class="isStepComplete(index) ? 'bg-success border-success text-white' : index === activeStep ? 'bg-danger border-danger text-white' : 'bg-light text-secondary'">
+								<i v-if="isStepComplete(index)" class="bi bi-check-lg" aria-hidden="true"></i>
 								<i v-else-if="index === 0" class="bi bi-bag-check" aria-hidden="true"></i>
 								<i v-else-if="index === 1" class="bi bi-box-seam" aria-hidden="true"></i>
 								<i v-else-if="index === 2" class="bi bi-box2" aria-hidden="true"></i>
@@ -113,7 +118,7 @@ onMounted(loadOrder)
 							</span>
 							<span class="progress-step__connector" :class="{ 'invisible': index === steps.length - 1, 'is-complete': index < activeStep }"></span>
 						</div>
-						<div class="small fw-semibold" :class="index <= activeStep ? 'text-danger' : 'text-secondary'">{{ step.title }}</div>
+						<div class="small fw-semibold" :class="isStepComplete(index) ? 'text-success' : index === activeStep ? 'text-danger' : 'text-secondary'">{{ step.title }}</div>
 						<div class="small text-secondary">{{ step.description }}</div>
 					</div>
 				</div>
@@ -181,7 +186,7 @@ onMounted(loadOrder)
 						<div class="d-flex justify-content-between align-items-baseline border-top pt-3 mt-3">
 							<strong>ยอดรวม</strong><strong class="fs-5 text-danger">฿{{ formatPrice(order.totalAmount) }}</strong>
 						</div>
-						<p v-if="order.cancelReason" class="small text-danger mt-2 mb-0">{{ order.cancelReason }}</p>
+						<p v-if="cancelReasonLabel" class="small text-danger mt-2 mb-0">{{ cancelReasonLabel }}</p>
 					</section>
 				</aside>
 			</div>
@@ -200,7 +205,7 @@ onMounted(loadOrder)
 }
 
 .progress-step__connector.is-complete {
-	border-color: var(--bs-danger);
+	border-color: var(--bs-success);
 }
 
 .progress-step__node {

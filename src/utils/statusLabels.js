@@ -10,6 +10,7 @@ export const orderStatusLabels = {
 export const cancelReasonLabels = {
   payment_timeout: 'หมดเวลาชำระเงิน',
   admin: 'ร้านยกเลิก',
+  customer: 'ลูกค้ายกเลิก',
 }
 
 export const shipmentStatusLabels = {
