@@ -2,10 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { getBrands, getCategories, getPublicProducts, mapCatalogProduct } from '../../api/catalog'
 import { createProduct } from '../../api/adminProducts'
-<<<<<<< HEAD
 import CatalogManageModal from './CatalogManageModal.vue'
-=======
->>>>>>> 70c7077 (Add admin pages with product creation and drop admin footer)
 import { formatPrice } from '../../utils/formatters'
 
 const sortOptions = [
@@ -97,7 +94,6 @@ function stockBadge(product) {
   return { text: `คงเหลือ ${product.stockCount} ชิ้น`, cls: 'text-bg-success' }
 }
 
-<<<<<<< HEAD
 // ---- จัดการหมวดหมู่ / แบรนด์ ----
 const manageKind = ref(null)
 
@@ -109,8 +105,6 @@ async function onCatalogChanged() {
   await loadProducts(pagination.value.currentPage)
 }
 
-=======
->>>>>>> 70c7077 (Add admin pages with product creation and drop admin footer)
 // ---- เพิ่มสินค้าใหม่ ----
 const showAdd = ref(false)
 const adding = ref(false)
@@ -202,13 +196,9 @@ onMounted(() => {
       <p class="small text-secondary mb-0">เลือกสินค้าที่ต้องการเพื่อเข้าไปแก้ไขรายละเอียด ราคา และสต็อก</p>
     </header>
 
-<<<<<<< HEAD
     <div class="d-flex flex-wrap justify-content-end gap-2 mb-3">
       <button class="btn btn-outline-secondary" type="button" @click="manageKind = 'category'"><i class="bi bi-tags me-1" aria-hidden="true"></i>จัดการหมวดหมู่</button>
       <button class="btn btn-outline-secondary" type="button" @click="manageKind = 'brand'"><i class="bi bi-award me-1" aria-hidden="true"></i>จัดการแบรนด์</button>
-=======
-    <div class="d-flex justify-content-end mb-3">
->>>>>>> 70c7077 (Add admin pages with product creation and drop admin footer)
       <button class="btn btn-success" type="button" @click="openAdd"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>เพิ่มสินค้า</button>
     </div>
 
@@ -317,11 +307,8 @@ onMounted(() => {
         <button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage >= pagination.totalPages" @click="loadProducts(pagination.currentPage + 1)">ถัดไป</button>
       </div>
     </nav>
-<<<<<<< HEAD
     <CatalogManageModal v-if="manageKind" :kind="manageKind" @close="manageKind = null" @changed="onCatalogChanged" />
 
-=======
->>>>>>> 70c7077 (Add admin pages with product creation and drop admin footer)
     <template v-if="showAdd">
       <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="add-product-title" @keydown.esc="closeAdd">
         <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
@@ -373,15 +360,6 @@ onMounted(() => {
                   <label class="form-label small fw-semibold" for="new-desc">รายละเอียดสินค้า</label>
                   <textarea id="new-desc" v-model="newProduct.description" class="form-control" rows="3"></textarea>
                 </div>
-<<<<<<< HEAD
-=======
-                <div class="col-12">
-                  <div class="form-check form-switch">
-                    <input id="new-active" v-model="newProduct.isActive" class="form-check-input" type="checkbox" role="switch" />
-                    <label class="form-check-label small" for="new-active">เปิดขายหน้าร้านทันที</label>
-                  </div>
-                </div>
->>>>>>> 70c7077 (Add admin pages with product creation and drop admin footer)
               </div>
             </div>
             <div class="modal-footer">
