@@ -102,12 +102,6 @@ async function submitRegistration() {
         </button>
     </div>
 	<input id="register-password" v-model="password" class="form-control" :type="passwordVisible ? 'text' : 'password'" autocomplete="new-password" minlength="6" placeholder="กำหนดรหัสผ่านความปลอดภัยสูง" required />
-    <div class="row row-cols-2 g-1 mt-2 small text-secondary">
-        <div class="col d-flex align-items-center gap-2"><span class="password-indicator rounded-circle border"></span>อย่างน้อย 8 ตัวอักษร</div>
-        <div class="col d-flex align-items-center gap-2"><span class="password-indicator rounded-circle border"></span>มีตัวพิมพ์ใหญ่ (A-Z)</div>
-        <div class="col d-flex align-items-center gap-2"><span class="password-indicator rounded-circle border"></span>มีตัวเลขอย่างน้อย 1 ตัว</div>
-        <div class="col d-flex align-items-center gap-2"><span class="password-indicator rounded-circle border"></span>รหัสผ่านปลอดภัย</div>
-    </div>
 </div>
 
 <div>
