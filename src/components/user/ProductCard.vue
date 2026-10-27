@@ -56,7 +56,6 @@ async function addToCart() {
         <span v-else-if="product.warranty" class="text-nowrap">{{ product.warranty }}</span>
       </div>
       <h2 class="h6 fw-bold mt-2 mb-1"><RouterLink class="link-dark text-decoration-none" :to="`/user/goods/${product.id}`">{{ product.name }}</RouterLink></h2>
-      <p class="small text-secondary mb-2">{{ product.description }}</p>
 
       <div v-if="product.specs?.length" class="row g-1 mb-3">
         <div v-for="spec in product.specs" :key="spec" class="col-6">
