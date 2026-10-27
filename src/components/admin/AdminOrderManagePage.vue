@@ -146,6 +146,9 @@ async function openCustomer(order) {
 }
 
 async function toggleOrder(order) {
+  if (order.status === 'cancelled' && order.cancelReason === 'payment_timeout') {
+    return
+  }
   const current = expanded.value[order.orderId]
   if (current) {
     expanded.value = { ...expanded.value, [order.orderId]: null }
@@ -245,7 +248,7 @@ onMounted(() => loadOrders())
                 <button v-if="canAdvance(order)" class="btn btn-sm btn-outline-danger" type="button" @click="openShipModal(order)">
                   <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>เปลี่ยนสถานะ
                 </button>
-                <span v-else class="small text-secondary">{{ order.status === 'pending' ? 'รอชำระเงิน' : '-' }}</span>
+                <span v-else class="small text-secondary">{{ order.status === 'pending' ? 'รอชำระเงิน' : (order.status === 'cancelled' && order.cancelReason === 'payment_timeout' ? 'เลยเวลาชำระเงิน' : '-') }}</span>
               </td>
             </tr>
           </tbody>
