@@ -15,6 +15,12 @@ const paymentError = ref('')
 const order = ref(null)
 const selectedPaymentMethod = ref('promptpay')
 const form = ref({ recipientName: '', recipientPhone: '', shippingAddress: '', note: '' })
+const routeOrderId = computed(() => {
+	const q = router.currentRoute.value.query
+	if (q.orderId !== undefined && q.orderId !== null && q.orderId !== '') return q.orderId
+	if (q.id !== undefined && q.id !== null && q.id !== '') return q.id
+	return null
+})
 
 const qrCells = computed(() => Array.from({ length: 441 }, (_, index) => {
 	const x = index % 21
@@ -45,8 +51,31 @@ onMounted(async () => {
 		form.value.recipientPhone ||= auth.user.phone || ''
 		form.value.shippingAddress ||= auth.user.address || ''
 	}
-	await cart.refreshCart()
-	if (!cart.cart.items.length) await router.replace('/user/cart')
+	if (routeOrderId.value) {
+		try {
+			const { getMyOrderById } = await import('../../api/orders')
+			const data = await getMyOrderById(routeOrderId.value)
+			const items = Array.isArray(data?.items) ? data.items : []
+			const computedQty = items.reduce((s, i) => s + Number(i.quantity || 0), 0)
+			const computedTotal = items.reduce((s, i) => s + Number(i.subtotal != null ? i.subtotal : (Number(i.unitPrice || 0) * Number(i.quantity || 0)), 0), 0)
+			const qtyFinal = (data?.totalQty != null && data?.totalQty !== '' && !isNaN(Number(data.totalQty))) ? Number(data.totalQty) : computedQty
+			const amtFinal = (data?.totalAmount != null && data?.totalAmount !== '' && !isNaN(Number(data.totalAmount))) ? Number(data.totalAmount) : computedTotal
+			order.value = {
+				...data,
+				items,
+				totalQty: qtyFinal,
+				totalAmount: amtFinal
+			}
+			if (data?.recipientName) form.value.recipientName = data.recipientName
+			if (data?.recipientPhone) form.value.recipientPhone = data.recipientPhone
+			if (data?.shippingAddress) form.value.shippingAddress = data.shippingAddress
+		} catch (e) {
+			order.value = { orderId: Number(routeOrderId.value), totalAmount: 0, totalQty: 0, items: [] }
+		}
+	} else {
+		await cart.refreshCart()
+		if (!cart.cart.items.length) await router.replace('/user/cart')
+	}
 })
 
 function paymentMethodLabel(method) {
@@ -65,7 +94,7 @@ async function confirmPayment() {
 	submittingPayment.value = true
 	paymentError.value = ''
 	try {
-		if (!order.value?.orderId) {
+		if (!order.value?.orderId && !routeOrderId.value) {
 			const response = await checkoutOrder({
 				recipientName: form.value.recipientName.trim(),
 				recipientPhone: form.value.recipientPhone.trim(),
@@ -74,6 +103,8 @@ async function confirmPayment() {
 			})
 			order.value = response.order
 			await cart.refreshCart()
+		} else if (!order.value?.orderId && routeOrderId.value) {
+			order.value = order.value || { orderId: Number(routeOrderId.value) }
 		}
 
 		if (!order.value?.orderId) {
@@ -103,7 +134,7 @@ async function confirmPayment() {
 			<span aria-current="page">ชำระเงิน</span>
 		</nav>
 
-		<h1 class="h3 fw-bold mb-4">ชำระเงิน</h1>
+		<h1 class="h3 fw-bold mb-4">ชำระเงิน <span v-if="routeOrderId">#{{ order?.orderNo || routeOrderId }}</span></h1>
 
 		<form class="row g-4" @submit.prevent="submitCheckout">
 			<section class="col-lg-8 d-grid gap-3" aria-label="ข้อมูลจัดส่ง">
@@ -112,19 +143,19 @@ async function confirmPayment() {
 					<div class="row g-3">
 						<div class="col-md-6">
 							<label class="form-label small fw-semibold" for="recipient-name">ชื่อผู้รับ <span class="text-danger">*</span></label>
-							<input id="recipient-name" v-model="form.recipientName" class="form-control" autocomplete="name" required />
+							<input id="recipient-name" v-model="form.recipientName" class="form-control" autocomplete="name" :readonly="!!routeOrderId" required />
 						</div>
 						<div class="col-md-6">
 							<label class="form-label small fw-semibold" for="recipient-phone">เบอร์โทรศัพท์ <span class="text-danger">*</span></label>
-							<input id="recipient-phone" v-model="form.recipientPhone" class="form-control" type="tel" autocomplete="tel" required />
+							<input id="recipient-phone" v-model="form.recipientPhone" class="form-control" type="tel" autocomplete="tel" :readonly="!!routeOrderId.value" required />
 						</div>
 						<div class="col-12">
 							<label class="form-label small fw-semibold" for="shipping-address">ที่อยู่จัดส่ง <span class="text-danger">*</span></label>
-							<textarea id="shipping-address" v-model="form.shippingAddress" class="form-control" rows="3" autocomplete="street-address" required></textarea>
+							<textarea id="shipping-address" v-model="form.shippingAddress" class="form-control" rows="3" autocomplete="street-address" :readonly="!!routeOrderId.value" required></textarea>
 						</div>
 						<div class="col-12">
 							<label class="form-label small fw-semibold" for="order-note">หมายเหตุเพิ่มเติม</label>
-							<textarea id="order-note" v-model="form.note" class="form-control" rows="2" placeholder="เช่น เวลาที่สะดวกรับสินค้า"></textarea>
+							<textarea id="order-note" v-model="form.note" class="form-control" rows="2" placeholder="เช่น เวลาที่สะดวกรับสินค้า" :readonly="!!routeOrderId.value"></textarea>
 						</div>
 					</div>
 				</div>
@@ -152,20 +183,40 @@ async function confirmPayment() {
 			<aside class="col-lg-4" aria-label="สรุปคำสั่งซื้อ">
 				<section class="border rounded bg-white p-3">
 					<h2 class="h6 fw-bold border-bottom pb-3">สรุปคำสั่งซื้อ</h2>
-					<div v-for="item in cart.cart.items" :key="item.orderItemId" class="d-flex justify-content-between gap-3 small mb-2">
-						<span class="text-secondary text-truncate">{{ item.productName }} × {{ item.quantity }}</span>
-						<span class="text-nowrap">฿{{ formatPrice(item.subtotal) }}</span>
-					</div>
-					<div class="d-flex justify-content-between small border-top pt-3 mt-3">
-						<span>รวมสินค้า {{ cart.cart.totalQty }} ชิ้น</span><span>฿{{ formatPrice(cart.cart.totalAmount) }}</span>
-					</div>
-					<div class="d-flex justify-content-between align-items-baseline mt-2">
-						<strong>ยอดชำระ</strong><strong class="fs-5 text-danger">฿{{ formatPrice(cart.cart.totalAmount) }}</strong>
-					</div>
-					<button class="btn btn-danger w-100 mt-3" type="submit" :disabled="cart.loading || !cart.cart.items.length">
-						ยืนยันที่อยู่และชำระเงิน
-					</button>
-					<RouterLink class="btn btn-link link-secondary text-decoration-none w-100 mt-2" to="/user/cart">กลับไปแก้ไขตะกร้า</RouterLink>
+					<template v-if="routeOrderId">
+    <div v-for="item in order?.items || []" :key="item.orderItemId" class="d-flex justify-content-between gap-3 small mb-2">
+        <span class="text-secondary text-truncate">{{ item.productName }} × {{ item.quantity }}</span>
+        <span class="text-nowrap">฿{{ formatPrice(Number(item.subtotal != null ? item.subtotal : (Number(item.unitPrice || 0) * Number(item.quantity || 0)))) }}</span>
+    </div>
+    <div class="d-flex justify-content-between small border-top pt-3 mt-3">
+        <span>รวมสินค้า {{ Number(order?.totalQty || 0) }} ชิ้น</span><span>฿{{ formatPrice(Number(order?.totalAmount || 0)) }}</span>
+    </div>
+    <div class="d-flex justify-content-between align-items-baseline mt-2">
+        <strong>ยอดชำระ</strong><strong class="fs-5 text-danger">฿{{ formatPrice(Number(order?.totalAmount || 0)) }}</strong>
+    </div>
+    
+    <!-- ส่วนปุ่มกด -->
+    <button class="btn btn-danger w-100 mt-3" type="submit" :disabled="!order?.orderId || Number(order?.totalAmount || 0) <= 0">
+        ยืนยันการชำระเงิน
+    </button>
+						<RouterLink class="btn btn-link link-secondary text-decoration-none w-100 mt-2" to="/user/orders">กลับไปหน้าคำสั่งซื้อ</RouterLink>
+					</template>
+					<template v-else>
+						<div v-for="item in cart.cart.items" :key="item.orderItemId" class="d-flex justify-content-between gap-3 small mb-2">
+							<span class="text-secondary text-truncate">{{ item.productName }} × {{ item.quantity }}</span>
+							<span class="text-nowrap">฿{{ formatPrice(item.subtotal) }}</span>
+						</div>
+						<div class="d-flex justify-content-between small border-top pt-3 mt-3">
+							<span>รวมสินค้า {{ cart.cart.totalQty }} ชิ้น</span><span>฿{{ formatPrice(cart.cart.totalAmount) }}</span>
+						</div>
+						<div class="d-flex justify-content-between align-items-baseline mt-2">
+							<strong>ยอดชำระ</strong><strong class="fs-5 text-danger">฿{{ formatPrice(cart.cart.totalAmount) }}</strong>
+						</div>
+						<button class="btn btn-danger w-100 mt-3" type="submit" :disabled="cart.loading || !cart.cart.items.length">
+							ยืนยันที่อยู่และชำระเงิน
+						</button>
+						<RouterLink class="btn btn-link link-secondary text-decoration-none w-100 mt-2" to="/user/cart">กลับไปแก้ไขตะกร้า</RouterLink>
+					</template>
 				</section>
 			</aside>
 		</form>
@@ -194,7 +245,8 @@ async function confirmPayment() {
 							<span class="badge text-bg-warning">ข้อมูลจำลองสำหรับทดสอบ</span>
 						</div>
 						<dl class="row small mb-0">
-							<dt class="col-5 text-secondary fw-normal">ยอดชำระ</dt><dd class="col-7 fs-5 fw-bold text-danger">฿{{ formatPrice(cart.cart.totalAmount) }}</dd>
+							<dt class="col-5 text-secondary fw-normal">ยอดชำระ</dt>
+							<dd class="col-7 fs-5 fw-bold text-danger">฿{{ formatPrice(routeOrderId ? Number(order?.totalAmount || 0) : Number(cart.cart.totalAmount || 0)) }}</dd>
 						</dl>
 						<div v-if="paymentError" class="alert alert-danger py-2 small mt-3 mb-0" role="alert">{{ paymentError }}</div>
 					</div>

@@ -184,7 +184,7 @@ onMounted(loadOrder)
 						<div class="d-flex justify-content-between small mb-2"><span>ยอดสินค้า</span><span>฿{{ formatPrice(order.totalAmount) }}</span></div>
 						<div v-if="order.paidAt" class="d-flex justify-content-between small mb-2"><span>ชำระเงินเมื่อ</span><span>{{ formatDate(order.paidAt) }}</span></div>
 						<div class="d-flex justify-content-between align-items-baseline border-top pt-3 mt-3">
-							<strong>ยอดรวม</strong><strong class="fs-5 text-danger">฿{{ formatPrice(order.totalAmount) }}</strong>
+							<strong>ยอดรวม</strong><strong class="fs-5 text-danger">฿{{ formatPrice(Number(order.totalAmount || 0)) }}</strong>
 						</div>
 						<p v-if="cancelReasonLabel" class="small text-danger mt-2 mb-0">{{ cancelReasonLabel }}</p>
 					</section>
