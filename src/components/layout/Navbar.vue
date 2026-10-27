@@ -66,7 +66,6 @@ async function logout() {
                   <li><h6 class="dropdown-header">{{ [auth.user?.firstName, auth.user?.lastName].filter(Boolean).join(' ') || 'บัญชีของฉัน' }}</h6></li>
                   <li><RouterLink class="dropdown-item" to="/user/orders">Order ของฉัน</RouterLink></li>
                   <li><RouterLink class="dropdown-item" to="/user/profile">โปรไฟล์ของฉัน</RouterLink></li>
-                  <li><RouterLink class="dropdown-item" to="/user/payment">ชำระเงิน</RouterLink></li>
                   <li><hr class="dropdown-divider" /></li>
                   <li><button class="dropdown-item text-danger" type="button" @click="logout">ออกจากระบบ</button></li>
                 </template>
