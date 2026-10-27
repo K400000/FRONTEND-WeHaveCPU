@@ -96,9 +96,10 @@ onMounted(loadOrders)
                 :to="`/user/payment?orderId=${order.orderId}`"
                 @click.stop
               >ชำระเงิน</RouterLink>
+              <span v-if="order.status === 'cancelled' && order.cancelReason === 'payment_timeout'" class="d-block small text-danger">เลยเวลาชำระเงิน</span>
             </td>
             <td class="text-end text-nowrap fw-semibold">฿{{ formatPrice(order.totalAmount) }}</td>
-            <td class="text-end"><button class="btn btn-sm btn-outline-secondary" type="button" @click.stop="openOrder(order.orderId)">รายละเอียด</button></td>
+            <td class="text-end"><button class="btn btn-sm btn-outline-secondary" type="button" :disabled="order.status === 'cancelled' && order.cancelReason === 'payment_timeout'" @click.stop="(order.status === 'cancelled' && order.cancelReason === 'payment_timeout') ? null : openOrder(order.orderId)">รายละเอียด</button></td>
           </tr>
         </tbody>
       </table>
