@@ -10,14 +10,21 @@ const catalogError = ref(false)
 const products = ref([])
 const productsLoading = ref(true)
 const productsError = ref('')
-const nextPage = ref(1)
-const hasMoreProducts = ref(false)
+
+function shuffleArray(array) {
+  const result = [...array]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
 
 onMounted(async () => {
   const [categoryResult, brandResult, productResult] = await Promise.allSettled([
     getCategories(),
     getBrands(),
-    getPublicProducts({ page: 1, limit: 12 }),
+    getPublicProducts({ page: 1, limit: 50 }),
   ])
 
   if (categoryResult.status === 'fulfilled') categories.value = categoryResult.value
@@ -26,30 +33,13 @@ onMounted(async () => {
   catalogLoading.value = false
 
   if (productResult.status === 'fulfilled') {
-    products.value = productResult.value.data.map(mapCatalogProduct)
-    nextPage.value = productResult.value.pagination.currentPage + 1
-    hasMoreProducts.value = productResult.value.pagination.currentPage < productResult.value.pagination.totalPages
+    const mapped = productResult.value.data.map(mapCatalogProduct)
+    products.value = shuffleArray(mapped).slice(0, 10)
   } else {
     productsError.value = 'โหลดสินค้าไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง'
   }
   productsLoading.value = false
 })
-
-async function loadMoreProducts() {
-  productsLoading.value = true
-  productsError.value = ''
-
-  try {
-    const response = await getPublicProducts({ page: nextPage.value, limit: 12 })
-    products.value.push(...response.data.map(mapCatalogProduct))
-    nextPage.value = response.pagination.currentPage + 1
-    hasMoreProducts.value = response.pagination.currentPage < response.pagination.totalPages
-  } catch {
-    productsError.value = 'โหลดสินค้าเพิ่มเติมไม่สำเร็จ กรุณาลองอีกครั้ง'
-  } finally {
-    productsLoading.value = false
-  }
-}
 </script>
 
 <template>
@@ -87,10 +77,6 @@ async function loadMoreProducts() {
       <p class="small text-secondary mb-0">ไม่พบสินค้าที่เปิดจำหน่ายในขณะนี้</p>
     </div>
 
-    <div v-if="hasMoreProducts" class="text-center mt-4">
-      <button class="btn btn-outline-secondary" type="button" :disabled="productsLoading" @click="loadMoreProducts">
-        {{ productsLoading ? 'กำลังโหลด...' : 'โหลดสินค้าเพิ่มเติม' }}
-      </button>
-    </div>
+
   </main>
 </template>

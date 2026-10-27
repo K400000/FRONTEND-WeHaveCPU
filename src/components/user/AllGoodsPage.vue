@@ -28,6 +28,13 @@ const activeFilterCount = computed(() =>
 	Number(Boolean(selectedCategoryId.value)) + Number(Boolean(selectedBrandId.value)) + Number(inStockOnly.value) +
 	Number(minimumPrice.value !== '' || maximumPrice.value !== '') + Number(Boolean(searchTerm.value.trim())),
 )
+const pageNumbers = computed(() => {
+	const { totalPages, currentPage } = pagination.value
+	if (totalPages <= 1) return []
+	const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4))
+	const end = Math.min(totalPages, start + 4)
+	return Array.from({ length: end - start + 1 }, (_, index) => start + index)
+})
 
 async function loadCatalogFilters() {
 	catalogLoading.value = true
@@ -233,13 +240,16 @@ onMounted(() => {
 					<button class="btn btn-outline-danger btn-sm" type="button" @click="clearFilters">ล้างตัวกรอง</button>
 				</div>
 
-				<div v-if="pagination.totalPages > 1" class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4">
+				<nav v-if="pagination.totalPages > 1" class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4" aria-label="เลือกหน้า">
 					<span class="small text-secondary">หน้า {{ pagination.currentPage }} จาก {{ pagination.totalPages }}</span>
 					<div class="btn-group btn-group-sm">
-						<button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage <= 1" @click="loadProducts(pagination.currentPage - 1)">ก่อนหน้า</button>
-						<button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage >= pagination.totalPages" @click="loadProducts(pagination.currentPage + 1)">ถัดไป</button>
+						<button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage <= 1" @click="loadProducts(1)" aria-label="หน้าแรก">««</button>
+						<button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage <= 1" @click="loadProducts(pagination.currentPage - 1)" aria-label="ก่อนหน้า">«</button>
+						<button v-for="page in pageNumbers" :key="page" class="btn" :class="page === pagination.currentPage ? 'btn-danger' : 'btn-outline-secondary'" type="button" :disabled="loading" :aria-current="page === pagination.currentPage ? 'page' : undefined" @click="loadProducts(page)">{{ page }}</button>
+						<button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage >= pagination.totalPages" @click="loadProducts(pagination.currentPage + 1)" aria-label="ถัดไป">»</button>
+						<button class="btn btn-outline-secondary" type="button" :disabled="loading || pagination.currentPage >= pagination.totalPages" @click="loadProducts(pagination.totalPages)" aria-label="หน้าสุดท้าย">»»</button>
 					</div>
-				</div>
+				</nav>
 			</section>
 		</div>
 	</main>
