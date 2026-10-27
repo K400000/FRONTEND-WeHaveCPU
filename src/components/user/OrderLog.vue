@@ -88,7 +88,15 @@ onMounted(loadOrders)
               <small v-if="order.items.length > 2" class="text-secondary">และอีก {{ order.items.length - 2 }} รายการ</small>
             </td>
             <td class="text-center">{{ order.totalQty }}</td>
-            <td><span class="badge" :class="`text-bg-${getStatusDisplay(order.status).variant}`">{{ getStatusDisplay(order.status).label }}</span></td>
+            <td>
+              <span class="badge" :class="`text-bg-${getStatusDisplay(order.status).variant}`">{{ getStatusDisplay(order.status).label }}</span>
+              <RouterLink
+                v-if="order.status === 'pending'"
+                class="btn btn-sm btn-danger ms-2"
+                :to="`/user/payment?orderId=${order.orderId}`"
+                @click.stop
+              >ชำระเงิน</RouterLink>
+            </td>
             <td class="text-end text-nowrap fw-semibold">฿{{ formatPrice(order.totalAmount) }}</td>
             <td class="text-end"><button class="btn btn-sm btn-outline-secondary" type="button" @click.stop="openOrder(order.orderId)">รายละเอียด</button></td>
           </tr>

@@ -1,13 +1,44 @@
 <script setup>
-import { onMounted } from 'vue'
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cartStore'
+import { useAuthStore } from '../../stores/authStore'
+import { checkoutOrder } from '../../api/orders'
 import { formatPrice } from '../../utils/formatters'
 
 const cartStore = useCartStore()
+const authStore = useAuthStore()
+const router = useRouter()
 const confirmingClear = ref(false)
+const confirmingCheckout = ref(false)
+const checkoutLoading = ref(false)
+const checkoutError = ref('')
 
-onMounted(() => cartStore.refreshCart())
+onMounted(async () => {
+  await cartStore.refreshCart()
+  await authStore.refreshSession()
+})
+
+async function doCheckout() {
+  checkoutError.value = ''
+  checkoutLoading.value = true
+  try {
+    const user = authStore.user
+    await checkoutOrder({
+      recipientName: [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || '',
+      recipientPhone: user?.phone || '',
+      shippingAddress: user?.address || '',
+      note: ''
+    })
+    await cartStore.refreshCart()
+    confirmingCheckout.value = false
+    router.push('/user/orders')
+  } catch (error) {
+    checkoutError.value = error.response?.data?.message || 'ไม่สามารถสร้างคำสั่งซื้อได้'
+  } finally {
+    checkoutLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -99,9 +130,32 @@ onMounted(() => cartStore.refreshCart())
             <strong>ยอดรวม</strong>
             <strong class="fs-5 text-danger">฿{{ formatPrice(cartStore.cart.totalAmount) }}</strong>
           </div>
-          <RouterLink class="btn btn-danger w-100 mt-3" to="/user/payment">ดำเนินการสั่งซื้อ</RouterLink>
+          <button class="btn btn-danger w-100 mt-3" type="button" :disabled="cartStore.loading || checkoutLoading || !cartStore.cart.items.length" @click="confirmingCheckout = true">ดำเนินการสั่งซื้อ</button>
+          <div v-if="checkoutError" class="alert alert-danger mt-2 mb-0 py-2 small">{{ checkoutError }}</div>
         </section>
       </aside>
     </div>
+
+    <div v-if="confirmingCheckout" class="modal d-block" tabindex="-1" role="dialog" aria-modal="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">ยืนยันการสั่งซื้อ</h5>
+            <button type="button" class="btn-close" :disabled="checkoutLoading" @click="confirmingCheckout = false"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">คุณต้องการยืนยันคำสั่งซื้อสินค้าทั้งหมดในตะกร้าหรือไม่?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" :disabled="checkoutLoading" @click="confirmingCheckout = false">ยกเลิก</button>
+            <button type="button" class="btn btn-danger" :disabled="checkoutLoading" @click="doCheckout">
+              <span v-if="checkoutLoading" class="spinner-border spinner-border-sm me-2"></span>
+              ตกลง
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-if="confirmingCheckout" class="modal-backdrop show"></div>
   </main>
 </template>
