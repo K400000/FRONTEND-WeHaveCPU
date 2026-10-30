@@ -1,14 +1,13 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getMyOrderById, getMyOrderTracking } from '../../api/orders'
+import { getMyOrderById } from '../../api/orders'
 import { cancelReasonLabels, getStatusDisplay } from '../../utils/statusLabels'
 import { formatDate, formatPrice } from '../../utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
 const order = ref(null)
-const tracking = ref(null)
 const loading = ref(true)
 const errorMessage = ref('')
 const steps = [
@@ -22,7 +21,7 @@ const steps = [
 const activeStep = computed(() => {
 	if (!order.value || order.value.status === 'cancelled') return -1
 	if (order.value.status === 'pending') return 0
-	const shipmentStatusValue = tracking.value?.shipmentStatus || order.value.shipment?.status
+	const shipmentStatusValue = order.value.shipment?.status
 	if (order.value.status === 'completed' || shipmentStatusValue === 'delivered') return 4
 	if (['shipped', 'in_transit', 'out_for_delivery'].includes(shipmentStatusValue) || order.value.status === 'shipped') return 3
 	if (shipmentStatusValue === 'preparing') return 2
@@ -36,27 +35,17 @@ function isStepComplete(index) {
 
 const orderStatus = computed(() => getStatusDisplay(order.value?.status))
 const cancelReasonLabel = computed(() => cancelReasonLabels[order.value?.cancelReason] || order.value?.cancelReason)
-const shipmentStatusValue = computed(() => tracking.value?.shipmentStatus || order.value?.shipment?.status || '')
+const shipmentStatusValue = computed(() => order.value?.shipment?.status || '')
 const shipmentStatus = computed(() => shipmentStatusValue.value ? getStatusDisplay(shipmentStatusValue.value) : null)
-const courier = computed(() => tracking.value?.courier || order.value?.shipment?.courier)
-const trackingNo = computed(() => tracking.value?.trackingNo || order.value?.shipment?.trackingNo)
-const trackingEvents = computed(() => tracking.value?.timeline?.length
-	? tracking.value.timeline
-	: tracking.value?.events?.length
-		? tracking.value.events
-		: order.value?.shipment?.events || [])
+const courier = computed(() => order.value?.shipment?.courier)
+const trackingNo = computed(() => order.value?.shipment?.trackingNo)
+const trackingEvents = computed(() => order.value?.shipment?.events || [])
 
 async function loadOrder() {
 	loading.value = true
 	errorMessage.value = ''
 	try {
-		const [detailResult, trackingResult] = await Promise.allSettled([
-			getMyOrderById(route.params.id),
-			getMyOrderTracking(route.params.id),
-		])
-		if (detailResult.status === 'rejected') throw detailResult.reason
-		order.value = detailResult.value
-		tracking.value = trackingResult.status === 'fulfilled' ? trackingResult.value : null
+		order.value = await getMyOrderById(route.params.id)
 	} catch (error) {
 		errorMessage.value = error.response?.data?.message || 'โหลดรายละเอียดคำสั่งซื้อไม่สำเร็จ'
 		if (error.response?.status === 401) {
