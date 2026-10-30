@@ -30,11 +30,6 @@ export async function getMyOrderById(orderId) {
   }
 }
 
-export async function getMyOrderTracking(orderId) {
-  const response = await http.get(`/api/orders/${orderId}/tracking`)
-  return response.data
-}
-
 export async function checkoutOrder(shippingDetails) {
   const response = await http.post('/api/orders/checkout', shippingDetails)
   return response.data
