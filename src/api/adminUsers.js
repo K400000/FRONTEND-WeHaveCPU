@@ -1,6 +1,5 @@
 import http from './http'
 
-// swagger ระบุว่า response มี pagination { page, limit, total, totalPages } แต่ไม่ระบุชื่อ key ของรายการ จึงรับได้หลายรูปแบบ
 function normalizeUserList(body) {
   const items = Array.isArray(body) ? body : body?.data ?? body?.users ?? body?.items ?? []
   const meta = body?.pagination ?? body ?? {}
